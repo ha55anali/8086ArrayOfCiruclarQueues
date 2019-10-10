@@ -20,6 +20,7 @@ mov bx,FreeQueue
 mov cx,5
 try:
 	push 0
+	push FreeQueue
 	push arr
 	push 0
 	push 10
@@ -30,6 +31,7 @@ loop try
 mov cx,2
 try2:
 	push 0
+	push FreeQueue
 	push arr
 	push 1
 	push 10
@@ -38,7 +40,14 @@ try2:
 loop try2
 
 push 0
-push word [FreeQueue]
+push FreeQueue
+push arr
+push 1
+call qremove
+pop ax
+
+push 0
+push FreeQueue
 call qcreate
 pop ax
 
@@ -102,7 +111,7 @@ createMask: ;returns mask, get bit number
 	pop bp
 	ret 2
 
-isFree: ;bool(arr&,row number) returns 1 if free
+isFree: ;bool(freeQueue&,arr&,row number) returns 1 if free
 	push bp
 	mov bp,sp	
 	pusha
@@ -114,27 +123,29 @@ isFree: ;bool(arr&,row number) returns 1 if free
 	call createMask
 	pop ax
 
-	test [FreeQueue],ax
+	mov bx,[bp+8]
+	test [bx],ax
 	jz FreeArr
 
-	mov word [bp+8],1
+	mov word [bp+10],1
 	jmp isFreeEnd
 
 	FreeArr:
-	mov word [bp+8],0
+	mov word [bp+10],0
 
 	isFreeEnd:
 	popa
 	pop bp
-	ret 4
+	ret 6
 
-qAdd: ;returns bool takes arr address, row ,val
+qAdd: ;returns bool takes freeQueue arr address, row ,val
 	push bp
 	mov bp,sp
 	pusha
 
 	;check if row free
 	push 0
+	push word [bp+10];freeQueue
 	push word [bp+8];arr
 	push word [bp+6];row
 	call isFree
@@ -142,7 +153,7 @@ qAdd: ;returns bool takes arr address, row ,val
 	cmp ax,0
 	je qAddEnd
 		;return 1
-		mov word [bp+10],1
+		mov word [bp+12],1
 
 		;get que end index
 		push 0
@@ -191,16 +202,17 @@ qAdd: ;returns bool takes arr address, row ,val
 			pop ax
 			xor ax,0xFFFF
 
-			and [FreeQueue],ax	
+			mov bx,[bp+10]
+			and [bx],ax	
 			 
 
 	qAddEnd:
 		popa
 		pop bp
-		ret	6 
+		ret	8
 
 
-qremove: ;bool(arr,row)
+qremove: ;bool(freeQueue&,arr,row)
 	push bp
 	mov bp,sp
 	pusha
@@ -228,6 +240,7 @@ qremove: ;bool(arr,row)
 
 		;check if row free
 		push 0
+		push word [bp+8];freeQueue
 		push word [bp+6];arr
 		push word [bp+4];row
 		call isFree
@@ -235,7 +248,7 @@ qremove: ;bool(arr,row)
 		cmp ax,1
 		jne makeFree;mark list as free
 
-		mov word [bp+8],0
+		mov word [bp+10],0
 		jmp qremoveEnd
 
 		makeFree:
@@ -244,12 +257,13 @@ qremove: ;bool(arr,row)
 			call createMask
 			pop ax
 
-			or [FreeQueue],ax
+			mov bx,[bp+8]
+			or [bx],ax
 			jmp removeEl
 
 	removeEl:
 	;return 1
-	mov word [bp+8],1
+	mov word [bp+10],1
 
 	;get start
 	push 0
@@ -269,19 +283,22 @@ qremove: ;bool(arr,row)
 	qremoveEnd:
 	popa
 	pop bp
-	ret 4
+	ret 6
 	
-qcreate: ;int (arr) returns free row number, -1 if all full
+qcreate: ;int (freeQueue&) returns free row number, -1 if all full
 	push bp
 	mov bp,sp
 	pusha
+
+	;get freeQueue in bx
+	mov bx,[bp+4]
 
 	mov ax,0x8000 ;mask
 	mov cx,rowCount ;counter
 	sub cx,1
 
 	travArr:
-		test [bp+4],ax
+		test [bx],ax
 		jnz foundFree
 		shr ax,1
 		loop travArr
