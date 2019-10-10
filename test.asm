@@ -1,12 +1,14 @@
 jmp start
 
-%define rowSize 16
-%define colSize 32
+%define rowCount 3
+%define colCount 4
 
-%define startIndex 2*colSize-4
-%define endIndex 2*colSize-2
+%define rowSize rowCount*2
+%define colSize colCount*2
+%define startIndex 2*colCount-4
+%define endIndex 2*colCount-2
 
-%define totalCells rowNo*colSize
+%define totalCells rowNo*colCount
 	FreeQueue: dw 0xFFFF
 	arr: times 512 dw 0
 %undef totalCells
@@ -15,7 +17,7 @@ jmp start
 
 start:
 mov bx,FreeQueue
-mov cx,30
+mov cx,5
 try:
 	push 0
 	push arr
@@ -25,7 +27,7 @@ try:
 	pop ax
 loop try
 
-mov cx,30
+mov cx,2
 try2:
 	push 0
 	push arr
@@ -41,15 +43,14 @@ call qcreate
 pop ax
 
 
-
-
 getEl: ;element& (arr&,row col)
 	push bp
 	mov bp,sp
 	pusha
 
 	;get col size
-	mov ax,colSize;size of col
+	mov ax,colSize
+	;size of col
 	mul word [bp+6]
 	
 	add ax, [bp+8];arr base address
@@ -276,7 +277,8 @@ qcreate: ;int (arr) returns free row number, -1 if all full
 	pusha
 
 	mov ax,0x8000 ;mask
-	mov cx,15 ;counter
+	mov cx,rowCount ;counter
+	sub cx,1
 
 	travArr:
 		test [bp+4],ax
@@ -289,8 +291,8 @@ qcreate: ;int (arr) returns free row number, -1 if all full
 	jmp qcreateEnd
 
 	foundFree:
-		sub cx,rowSize
-		add cx,1 ;account for rowSize-1
+		sub cx,rowCount
+		add cx,1 ;account for rowCount-1
 		mov ax,cx
 		mov cx,-1
 		mul cx
