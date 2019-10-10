@@ -1,4 +1,19 @@
+jmp start
+
+%define rowSize 16
+%define colSize 32
+
+%define startIndex 2*colSize-4
+%define endIndex 2*colSize-2
+
+%define totalCells rowNo*colSize
+	FreeQueue: dw 0xFFFF
+	arr: times 512 dw 0
+%undef totalCells
+
 [org 0x100]
+
+start:
 mov bx,FreeQueue
 mov cx,30
 try:
@@ -26,8 +41,7 @@ call qcreate
 pop ax
 
 
-FreeQueue: dw 0xFFFF
-arr: times 512 dw 0
+
 
 getEl: ;element& (arr&,row col)
 	push bp
@@ -35,7 +49,7 @@ getEl: ;element& (arr&,row col)
 	pusha
 
 	;get col size
-	mov ax,64 ;size of col
+	mov ax,colSize;size of col
 	mul word [bp+6]
 	
 	add ax, [bp+8];arr base address
@@ -57,7 +71,7 @@ incIndex: ;index(index&)
 	add bx,2
 
 	;if index at end, wraparound
-	cmp bx,60
+	cmp bx,startIndex
 	jne incEnd
 	
 	mov bx,0
@@ -133,7 +147,7 @@ qAdd: ;returns bool takes arr address, row ,val
 		push 0
 		push word [bp+8]
 		push word [bp+6]
-		push 62
+		push endIndex
 		call getEl
 		pop bx			
 
@@ -160,7 +174,7 @@ qAdd: ;returns bool takes arr address, row ,val
 			push 0
 			push word [bp+8]
 			push word [bp+6]
-			push 60
+			push startIndex
 			call getEl
 			pop	si
 
@@ -195,7 +209,7 @@ qremove: ;bool(arr,row)
 		push 0
 		push word [bp+6]
 		push word [bp+4]
-		push 60
+		push startIndex
 		call getEl
 		pop bx
 		mov ax,[bx]
@@ -204,7 +218,7 @@ qremove: ;bool(arr,row)
 		push 0
 		push word [bp+6]
 		push word [bp+4]
-		push 62
+		push endIndex
 		call getEl
 		pop bx
 
@@ -240,7 +254,7 @@ qremove: ;bool(arr,row)
 	push 0
 	push word [bp+6]
 	push word [bp+4]
-	push 60
+	push startIndex
 	call getEl
 	pop bx
 
@@ -275,7 +289,8 @@ qcreate: ;int (arr) returns free row number, -1 if all full
 	jmp qcreateEnd
 
 	foundFree:
-		sub cx,15
+		sub cx,rowSize
+		add cx,1 ;account for rowSize-1
 		mov ax,cx
 		mov cx,-1
 		mul cx
