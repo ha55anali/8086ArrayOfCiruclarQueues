@@ -28,8 +28,6 @@ try:
 	pop ax
 loop try
 
-mov cx,2
-try2:
 	push 0
 	push FreeQueue
 	push arr
@@ -37,14 +35,23 @@ try2:
 	push 10
 	call qAdd
 	pop ax
-loop try2
 
-push 0
+
 push FreeQueue
 push arr
 push 1
-call qremove
-pop ax
+call qdestroy
+
+mov cx,2
+try3:
+	push 0
+	push FreeQueue
+	push arr
+	push 1
+	push 10
+	call qAdd
+	pop ax
+loop try3
 
 push 0
 push FreeQueue
@@ -320,3 +327,39 @@ qcreate: ;int (freeQueue&) returns free row number, -1 if all full
 	popa
 	pop bp
 	ret 2
+
+qdestroy: ;void (freeQueue&,arr&,row)
+	push bp
+	mov bp,sp
+	pusha
+
+	;set queue free
+	push 0
+	push word [bp+4]
+	call createMask
+	pop ax
+
+	mov bx,[bp+8]
+	or [bx],ax
+
+	;set startIndex=0
+	push 0
+	push word [bp+6]
+	push word [bp+4]
+	push startIndex
+	call getEl
+	pop bx
+	mov word [bx],0
+
+	;set endIndex=0
+	push 0
+	push word [bp+6]
+	push word [bp+4]
+	push endIndex
+	call getEl
+	pop bx
+	mov word [bx],0
+
+	popa
+	pop bx
+	ret 6
