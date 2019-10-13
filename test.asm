@@ -1,7 +1,10 @@
 jmp start
 
-%define rowCount 3
-%define colCount 4
+;row count must be less than 16 because of the the freeQueue word limitation
+;col count must atleast be 3 as 2 elements are used for storing begin and end of the queue
+
+%define rowCount 16
+%define colCount 4 
 
 %define rowSize rowCount*2
 %define colSize colCount*2
@@ -22,7 +25,7 @@ try:
 	push 0
 	push FreeQueue
 	push arr
-	push 0
+	push 15
 	push 10
 	call qAdd
 	pop ax
@@ -31,7 +34,7 @@ loop try
 	push 0
 	push FreeQueue
 	push arr
-	push 1
+	push 15
 	push 10
 	call qAdd
 	pop ax
@@ -58,8 +61,10 @@ push FreeQueue
 call qcreate
 pop ax
 
-
+;returns the address of the element in passed row and col
 getEl: ;element& (arr&,row col)
+	;return arr[row*colSize+col]
+
 	push bp
 	mov bp,sp
 	pusha
@@ -78,6 +83,7 @@ getEl: ;element& (arr&,row col)
 	pop bp
 	ret 6
 
+;increments the passed index for the circular queue
 incIndex: ;index(index&)
 	push bp
 	mov bp,sp
@@ -99,6 +105,8 @@ incIndex: ;index(index&)
 	pop bp
 	ret 2
 
+;returns mask with the 1 in the passed position
+; if n=3 0001 0000 0000 0000
 createMask: ;returns mask, get bit number
 	push bp
 	mov bp,sp
@@ -118,7 +126,9 @@ createMask: ;returns mask, get bit number
 	pop bp
 	ret 2
 
+;checks freeQueue word
 isFree: ;bool(freeQueue&,arr&,row number) returns 1 if free
+	;uses mask to check if the corresponding bit in word is 1 ot 0
 	push bp
 	mov bp,sp	
 	pusha
@@ -146,6 +156,13 @@ isFree: ;bool(freeQueue&,arr&,row number) returns 1 if free
 	ret 6
 
 qAdd: ;returns bool takes freeQueue arr address, row ,val
+	;algorithm
+	;if (queue free)
+	;	get end element
+	; 	store data in end element
+	;	inc end index
+	;	if start==end index
+	;		mark queue as not free(full)
 	push bp
 	mov bp,sp
 	pusha
@@ -220,6 +237,13 @@ qAdd: ;returns bool takes freeQueue arr address, row ,val
 
 
 qremove: ;bool(freeQueue&,arr,row)
+	;algorithm
+	;if (start==end && array free)
+	;	array is empty, return 0
+	;else
+	;	mark as free on word
+	;	get start index
+	;	increment start index
 	push bp
 	mov bp,sp
 	pusha
@@ -329,6 +353,9 @@ qcreate: ;int (freeQueue&) returns free row number, -1 if all full
 	ret 2
 
 qdestroy: ;void (freeQueue&,arr&,row)
+	;algorithm
+	;set queue as free in freeQueue word
+	;start and end index=0
 	push bp
 	mov bp,sp
 	pusha
